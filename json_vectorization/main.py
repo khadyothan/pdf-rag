@@ -5,6 +5,7 @@ import requests
 import argparse
 from clip_vectorization import vectorize_text, vectorize_image
 
+
 def download_from_google_drive(google_drive_url, destination_path):
     """
     Downloads a file from a Google Drive shareable link.
@@ -34,31 +35,45 @@ def download_from_google_drive(google_drive_url, destination_path):
         print(f"Error downloading file from Google Drive: {e}")
         return False
 
-def process_json(json_file, output_json):
-    print("-" * 50)
+
+def process_json(input_json, output_json):
+    print("=" * 50)
     download_folder = "downloaded_images"
     os.makedirs(download_folder, exist_ok=True)  # Create a temporary folder for downloaded images
-    
-    # Read JSON file
-    with open(json_file, 'r') as file:
-        data = json.load(file)
-    
-    embeddings = {}  # To store key-value pairs of embeddings
 
-    # Iterate through papers in the JSON
+    # Load existing data from the consolidated output file if it exists
+    if os.path.exists(output_json):
+        with open(output_json, 'r') as outfile:
+            consolidated_embeddings = json.load(outfile)
+    else:
+        consolidated_embeddings = {}
+
+    # Read the input JSON file
+    with open(input_json, 'r') as file:
+        data = json.load(file)
+
+    # Iterate through papers in the input JSON
     for paper_key, paper_content in data.items():
         print(f"Processing {paper_key}...")
+        
+        # Check if the paper is already processed
+        if paper_key in consolidated_embeddings:
+            print(f"{paper_key} already exists in the consolidated output. Skipping...")
+            continue
+
+        # Store embeddings for the current paper
+        paper_embeddings = {}
 
         # Extract and vectorize abstract
         abstract = paper_content.get('abstract', 'No abstract provided')
         print(f"Abstract: {abstract}")
-        embeddings[f"{paper_key}_abstract"] = vectorize_text(abstract)
+        paper_embeddings["abstract"] = vectorize_text(abstract)
 
         # Extract and vectorize subsection values
         sections = paper_content.get('sections', {})
         for section, value in sections.items():
             print(f"{section}: {value}")
-            embeddings[f"{paper_key}_{section}"] = vectorize_text(value)
+            paper_embeddings[section] = vectorize_text(value)
 
         # Download images and vectorize them
         images = paper_content.get('images', {})
@@ -89,26 +104,29 @@ def process_json(json_file, output_json):
                         continue
 
                 # Vectorize the image and add to embeddings
-                embeddings[f"{paper_key}_{image_key}"] = vectorize_image(image_path)
+                paper_embeddings[image_key] = vectorize_image(image_path)
 
-        print("-" * 50)
-    
-    # Save the embeddings to a JSON file
+        # Add the paper's embeddings to the consolidated structure
+        consolidated_embeddings[paper_key] = paper_embeddings
+
+    # Save the consolidated embeddings to the output JSON file
     with open(output_json, 'w') as outfile:
-        json.dump(embeddings, outfile, indent=4)
-    print(f"Embeddings saved to {output_json}")
+        json.dump(consolidated_embeddings, outfile, indent=4)
+    print(f"Updated consolidated embeddings saved to {output_json}")
 
     # Clean up the downloaded_images folder
     shutil.rmtree(download_folder)
     print(f"Temporary folder '{download_folder}' deleted.")
 
+
 def main():
-    parser = argparse.ArgumentParser(description="Process a JSON file and download images.")
-    parser.add_argument("json_file", help="Path to the input JSON file.")
-    parser.add_argument("output_json", help="Path to the output JSON file.")
+    parser = argparse.ArgumentParser(description="Process an input JSON file and append to a consolidated output.")
+    parser.add_argument("input_json", help="Path to the input JSON file.")
+    parser.add_argument("output_json", help="Path to the consolidated output JSON file.")
     args = parser.parse_args()
     
-    process_json(args.json_file, args.output_json)
+    process_json(args.input_json, args.output_json)
+
 
 if __name__ == "__main__":
     main()
