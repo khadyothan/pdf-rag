@@ -1,0 +1,54 @@
+{
+    "0": {
+        "paper_id": "paper_1",
+        "section_name": "abstract"
+    },
+    "1": {
+        "paper_id": "paper_1",
+        "section_name": "Methodology"
+    },
+    "2": {
+        "paper_id": "paper_1",
+        "section_name": "Architecture"
+    },
+    "3": {
+        "paper_id": "paper_1",
+        "section_name": "Results"
+    },
+    "4": {
+        "paper_id": "paper_1",
+        "section_name": "Conclusion"
+    },
+    "5": {
+        "paper_id": "paper_1",
+        "section_name": "image_1"
+    },
+    "6": {
+        "paper_id": "paper_1",
+        "section_name": "image_2"
+    },
+    "7": {
+        "paper_id": "paper_2",
+        "section_name": "abstract"
+    },
+    "8": {
+        "paper_id": "paper_2",
+        "section_name": "Methodology"
+    },
+    "9": {
+        "paper_id": "paper_2",
+        "section_name": "Architecture"
+    },
+    "10": {
+        "paper_id": "paper_2",
+        "section_name": "Results"
+    },
+    "11": {
+        "paper_id": "paper_2",
+        "section_name": "Conclusion"
+    },
+    "12": {
+        "paper_id": "paper_2",
+        "section_name": "image_1"
+    }
+}
