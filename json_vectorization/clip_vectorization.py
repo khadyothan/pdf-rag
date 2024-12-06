@@ -24,6 +24,7 @@ def vectorize_text(input_text):
         with torch.no_grad():
             text_embedding = clip_model.get_text_features(**inputs)
             text_embedding = text_embedding.squeeze().numpy().tolist()  # Convert to list for JSON compatibility
+        print(text_embedding)
         return text_embedding
     except Exception as e:
         print(f"Error processing text: {e}")
@@ -50,3 +51,7 @@ def vectorize_image(image_path):
     except Exception as e:
         print(f"Error processing image at {image_path}: {e}")
         return None
+
+
+s = "My Name is Chandu"
+vectorize_text(s)
