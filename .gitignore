@@ -1,2 +1,7 @@
 *.env
 django-env/
+__pycache__
+*.json
+/pdf-rag-venv/bin
+/pdf-rag-venv/lib
+/faiss_storage/faiss_index.idx

@@ -199,54 +199,104 @@
         }
     });
     document.getElementById("ask-btn").addEventListener("click", function () {
-            const query = document.getElementById("query").value;
-            let textEmbedding = null, imageEmbedding = null;
-            fetch('/getEmbedding/',{
+    const query = document.getElementById("query").value;
+
+    let textEmbedding = null, imageEmbedding = null;
+    let similarContent = null; // Placeholder for similar content
+
+    console.log("Query:", query); // Log the query to check if it's being captured properly
+
+    try {
+        // Fetch text embedding for the query
+        fetch('/getEmbedding/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ type: "text", text: query })
+        })
+        .then(response => {
+            console.log("Text embedding response status:", response.status);
+            return response.json();
+        })
+        .then(data => {
+            textEmbedding = data.response;
+            console.log("Text embedding", textEmbedding);
+
+            // Now, request similar content based on the text embedding
+            fetch('/getSimilarContent/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ type : "text", text : query })
+                body: JSON.stringify({ embedding: textEmbedding })
             })
-            .then(response => response.json())
-            .then(data =>{
-                textEmbedding = data.response;
-                console.log("Text embedding",textEmbedding)
+            .then(response => {
+                console.log("Similar content response status:", response.status);
+                return response.json();
             })
-            console.log("Image file path",imageFilePath)
-            if(imageFilePath){
-                fetch('/getEmbedding/',{
+            .then(data => {
+                similarContent = data.response;
+                console.log("Similar content", similarContent);
+                
+                const prompt = `Fetched From Database : ${similarContent} || User Query: ${query}`;
+
+                // Send both the query and the similar content to the LLM
+                fetch('/getDataFromLLM/', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ type : "image", imageFilePath :  imageFilePath})
+                    body: JSON.stringify({ query: prompt })
                 })
-                .then(response => response.json())
-                .then(data =>{
-                    imageEmbedding = data.response;
-                    console.log("Image embedding",imageEmbedding)
+                .then(response => {
+                    console.log("LLM response status:", response.status);
+                    return response.json();
                 })
-            }
-            fetch('/getDataFromLLM/', {
+                .then(data => {
+                    if (data.response) {
+                        document.getElementById("response-box").innerHTML = data.response;
+                    } else {
+                        document.getElementById("response-box").innerText = "Error: " + (data.error || "Unexpected error.");
+                    }
+                })
+                .catch(error => {
+                    console.error("Error during LLM request:", error); // Log error details
+                    document.getElementById("response-box").innerText = "Error: " + error;
+                });
+            })
+            .catch(error => {
+                console.error("Error fetching similar content:", error); // Log error details
+            });
+        })
+        .catch(error => {
+            console.error("Error fetching text embedding:", error); // Log error details
+        });
+
+        // Handle image embedding if needed (similar to text embedding)
+        if (imageFilePath) {
+            console.log("Image file path:", imageFilePath); // Log the image file path
+            fetch('/getEmbedding/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ query: query })
+                body: JSON.stringify({ type: "image", imageFilePath: imageFilePath })
             })
             .then(response => response.json())
             .then(data => {
-                if (data.response) { 
-                    document.getElementById("response-box").innerHTML = data.response;
-                } else {
-                    document.getElementById("response-box").innerText = "Error: " + (data.error || "Unexpected error.");
-                }
+                imageEmbedding = data.response;
+                console.log("Image embedding", imageEmbedding);
             })
             .catch(error => {
-                document.getElementById("response-box").innerText = "Error: " + error;
+                console.error("Error fetching image embedding:", error); // Log error details
             });
-        });
+        }
+    } catch (error) {
+        console.error("Unexpected error in the try-catch block:", error); // Catch and log any unexpected errors
+        document.getElementById("response-box").innerText = "Unexpected error: " + error;
+    }
+});
     function removeImage() {
         document.getElementById('file-input').value = '';
         document.getElementById('image-preview').style.display = 'none';

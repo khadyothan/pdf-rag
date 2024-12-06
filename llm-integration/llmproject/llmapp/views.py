@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
-from . import clip_vectorization
+from . import clip_vectorization,searchSimilarPaper
 import json
 from django.views.decorators.csrf import csrf_exempt
 # from openai import OpenAI
@@ -27,11 +27,19 @@ def getDataFromOpenAIAPI(request):
             completion = client.chat.completions.create(
                     model="llama3-8b-8192",
                     messages=[
-                        {
-                            "role": "user",
-                            "content": query
-                        }
-                    ],
+                    {
+                        "role": "system",
+                        "content": (
+                            "You are a PDF RAG assistant. You will assist users by responding to their queries "
+                            "using the relevant data fetched from external databases. Provide accurate and concise answers. "
+                            "If the retrieved documents are not directly related to the query, mock it as if you are giving the answer using the provided database content"
+                        )
+                    },
+                    {
+                        "role": "user",
+                        "content": query
+                    }
+                ],
                     temperature=1,
                     max_tokens=1024,
                     top_p=1,
@@ -86,4 +94,29 @@ def getEmbedding(request):
                 return JsonResponse({'response': imageEmbedding})
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
+    return JsonResponse({'error': 'Invalid request method.'}, status=400)
+
+
+@csrf_exempt
+def getSimilarContent(request):
+    os.environ["TOKENIZERS_PARALLELISM"] = "false"
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            query_embedding = data.get("embedding", None)
+            print(query_embedding)
+            if query_embedding is None:
+                return JsonResponse({'error': 'Embedding is required.'}, status=400)
+
+            # Assuming the embeddings are stored somewhere (e.g., in a database or a file)
+            # and we have a function to find the most similar content based on the embedding
+            similar_content = searchSimilarPaper.search_similar_papers(query_embedding)
+
+            # Assuming the find_similar_content_by_embedding returns a list of similar content in plain text
+            return JsonResponse({'response': similar_content})
+        
+        except Exception as e:
+            print(f"Error in getSimilarContent: {e}")
+            return JsonResponse({'error': str(e)}, status=500)
+
     return JsonResponse({'error': 'Invalid request method.'}, status=400)
