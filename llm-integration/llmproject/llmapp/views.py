@@ -32,7 +32,6 @@ def getDataFromOpenAIAPI(request):
                         "content": (
                             "You are a PDF RAG assistant. You will assist users by responding to their queries "
                             "using the relevant data fetched from external databases. Provide accurate and concise answers. "
-                            "If the retrieved documents are not directly related to the query, mock it as if you are giving the answer using the provided database content"
                         )
                     },
                     {
